@@ -58,12 +58,12 @@ def test_retrieve(client, course_factory, base_url):
 
     #Arrange
 
-    course_factory(_quantity=1)
+    course = course_factory()
 
     #Act
 
     response_crt = client.get(base_url)
-    url = base_url + str(response_crt.json()[0]["id"]) + "/"
+    url = f"/api/v1/courses/{course.id}/"
     response_rtv = client.get(url)
 
     #Assert
@@ -99,13 +99,13 @@ def test_patch(course_factory, student_factory, client, base_url):
     #Arrange
 
     students = student_factory(_quantity=1)
-    course = course_factory(_quantity=1, students=students)
+    course = course_factory(students=students)
     data={'name':'Philosophy', 'students':[students[0].id]}
 
     #Act
 
     response_crt = client.get(base_url)
-    url = base_url + str(course[0].id) + "/"
+    url = f"/api/v1/courses/{course.id}/"
     response_upd = client.patch(url, data=data)
 
     #Assert
@@ -126,12 +126,12 @@ def test_destroy(course_factory, client, base_url):
 
     #Arrange
 
-    course_factory(_quantity=1)
+    course = course_factory()
 
     #Act
 
     response_crt = client.get(base_url)
-    url = base_url + str(response_crt.json()[0]["id"]) + "/"
+    url = f"/api/v1/courses/{course.id}/"
     response_del = client.delete(url)
     response_chk = client.get(url)
 
@@ -150,22 +150,21 @@ def test_filtering_by_id(client, course_factory, base_url):
 
     #Arrange
 
-    course_factory(_quantity=5)
+    courses = course_factory(_quantity=5)
     test_query = client.get(base_url).json()[2]
-    url = base_url + f'?id={test_query["id"]}'
 
     #Act
 
-    response = client.get(url)
+    response_flt = client.get(base_url, data={'id': courses[2].id})
 
     #Assert
 
     # Список курсов c искомым id успешно получен
-    assert response.status_code == 200
+    assert response_flt.status_code == 200
     # Результат фильтрации по id уникален
-    assert len(response.json()) == 1
+    assert len(response_flt.json()) == 1
     # Данные курса c искомым id соответствуют созданному курсу c id
-    assert response.json()[0] == test_query
+    assert response_flt.json()[0] == test_query
 
 
 @pytest.mark.django_db
@@ -173,22 +172,21 @@ def test_filtering_by_name(client, course_factory, base_url):
 
     #Arrange
 
-    course_factory(_quantity=5)
+    courses = course_factory(_quantity=5)
     test_query = client.get(base_url).json()[2]
-    url = base_url + f'?name={test_query["name"]}'
 
     #Act
 
-    response = client.get(url)
+    response_flt = client.get(base_url, data={'name': courses[2].name})
 
     #Assert
 
     # Список курсов c искомым name успешно получен
-    assert response.status_code == 200
+    assert response_flt.status_code == 200
     # Результат фильтрации по name уникален
-    assert len(response.json()) == 1
+    assert len(response_flt.json()) == 1
     # Данные курса c искомым name соответствуют созданному курсу c name
-    assert response.json()[0] == test_query
+    assert response_flt.json()[0] == test_query
 
 
 @pytest.mark.parametrize(
